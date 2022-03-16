@@ -22,18 +22,18 @@ class WidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        // Perform this loop procedure for each widget that belongs to this
-        // provider.
+
+        println(Integer.toString(counter))
+
         appWidgetIds.forEach { appWidgetId ->
 
-            //val intent = Intent(context, WidgetProvider::class.java)
+
             val intent = Intent(context, WidgetProvider::class.java)
             intent.action = ACTION_SIMPLEAPPWIDGET
 
             val pendingIntent: PendingIntent = PendingIntent.getBroadcast(context, 0, intent,
-                FLAG_UPDATE_CURRENT
+                PendingIntent.FLAG_UPDATE_CURRENT
             )
-
 
             // Get the layout for the widget and attach an on-click listener
             // to the button.
@@ -43,7 +43,7 @@ class WidgetProvider : AppWidgetProvider() {
             ).apply {
                 setOnClickPendingIntent(R.id.widgetButton, pendingIntent)
             }
-
+            views.setTextViewText(R.id.widgetText, Integer.toString(counter))
             // Tell the AppWidgetManager to perform an update on the current
             // widget.
             appWidgetManager.updateAppWidget(appWidgetId, views)
