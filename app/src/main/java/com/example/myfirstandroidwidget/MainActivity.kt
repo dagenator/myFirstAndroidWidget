@@ -14,12 +14,6 @@ class MainActivity : AppCompatActivity() {
 
 //        val intent = Intent(this, WidgetProvider::class.java)
 //        intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-//
-//        // Use an array and EXTRA_APPWIDGET_IDS instead of AppWidgetManager.EXTRA_APPWIDGET_ID,
-//// since it seems the onUpdate() is only fired on that:
-////        val ids: IntArray = AppWidgetManager.getInstance(application)
-////            .getAppWidgetIds(ComponentName(application, WidgetProvider::class.java))
-////        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
 //        sendBroadcast(intent)
 
     }

@@ -23,6 +23,7 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="ACTION_BROADCASTWIDGETSAMPLE" />
             </intent-filter>
 
             <meta-data
