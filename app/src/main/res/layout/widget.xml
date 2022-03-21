@@ -5,8 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="#6B97BA"
-    android:backgroundTint="#B26B97BA"
+    android:background="#B26B97BA"
     android:orientation="vertical"
     android:layout_centerInParent="true">
 
@@ -26,12 +25,22 @@
         />
     <Button
         app:layout_constraintTop_toBottomOf="@+id/widgetText"
-        android:id="@+id/widgetButton"
+        android:id="@+id/widgetIncreaseButton"
         android:layout_width="120dp"
         android:layout_height="50dp"
-        android:backgroundTint="#346E9C"
+        android:backgroundTint="#474747"
         android:textSize="14sp"
         android:text="@string/press_me"
+        android:textColor="#D0E5F6"
+        />
+    <Button
+        app:layout_constraintTop_toBottomOf="@+id/widgetText"
+        android:id="@+id/widgetBackgroundButton"
+        android:layout_width="120dp"
+        android:layout_height="50dp"
+        android:backgroundTint="#474747"
+        android:textSize="14sp"
+        android:text="@string/color_me"
         android:textColor="#D0E5F6"
         />
 

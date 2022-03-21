@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">myFirstAndroidWidget</string>
     <string name="press_me">Press me!</string>
+    <string name="color_me">Color me!</string>
 </resources>
