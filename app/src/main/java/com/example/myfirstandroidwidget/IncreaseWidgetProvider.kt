@@ -11,65 +11,15 @@ import android.widget.RemoteViews
 import java.util.*
 
 class IncreaseWidgetProvider : AppWidgetProvider() {
+    private val colorRandomizer = ColorRandomizer()
 
     companion object Counter {
         private var counter = 0
-        private var list: MutableList<Int> = mutableListOf()
-    }
 
-    private val ACTION_BROADCAST_INCREASE = "ACTION_BROADCAST_INCREASE"
-    private val ACTION_BROADCAST_COLOR_CHANGE = "ACTION_BROADCAST_COLOR_CHANGE"
-
-    private fun getIntent(context: Context, action: String, appWidgetId: Int): Intent {
-        val intent = Intent(context, IncreaseWidgetProvider::class.java)
-        intent.action = action
-        return intent.putExtra("id", appWidgetId)
-    }
-
-    private fun getRemoteViews(
-        context: Context, IncreasePendingIntent: PendingIntent, ColorPendingIntent: PendingIntent
-    ): RemoteViews {
-
-        return RemoteViews(
-            context.packageName,
-            R.layout.widget
-        ).apply {
-            setOnClickPendingIntent(R.id.widgetIncreaseButton, IncreasePendingIntent)
-            setOnClickPendingIntent(R.id.widgetBackgroundButton, ColorPendingIntent)
-        }
-    }
-
-    private fun getPendingIntent(
-        context: Context,
-        intent: Intent,
-        appWidgetId: Int
-    ): PendingIntent {
-        val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.FLAG_IMMUTABLE
-        } else {
-            PendingIntent.FLAG_UPDATE_CURRENT
-        }
-        return PendingIntent.getBroadcast(context, appWidgetId, intent, flag)
-    }
-
-
-    private fun updateAppWidget(
-        context: Context, appWidgetManager: AppWidgetManager,
-        appWidgetId: Int
-    ) {
-        val increasePendingIntent = getPendingIntent(
-            context,
-            getIntent(context, ACTION_BROADCAST_INCREASE, appWidgetId),
-            appWidgetId
-        )
-        val colorPendingIntent = getPendingIntent(
-            context,
-            getIntent(context, ACTION_BROADCAST_COLOR_CHANGE, appWidgetId),
-            appWidgetId
-        )
-        val views = getRemoteViews(context, increasePendingIntent, colorPendingIntent)
-        views.setTextViewText(R.id.widgetText, counter.toString())
-        appWidgetManager.updateAppWidget(appWidgetId, views)
+        private const val INCREASE_ID_KEY = "id"
+        private const val DEFAULT_WIDGET_ID = 0
+        private const val ACTION_BROADCAST_INCREASE = "ACTION_BROADCAST_INCREASE"
+        private const val ACTION_BROADCAST_COLOR_CHANGE = "ACTION_BROADCAST_COLOR_CHANGE"
     }
 
     override fun onUpdate(
@@ -79,60 +29,104 @@ class IncreaseWidgetProvider : AppWidgetProvider() {
     ) {
         appWidgetIds.forEach { appWidgetId ->
             updateAppWidget(context, appWidgetManager, appWidgetId)
-            saveWidgetId(appWidgetId)
+            WidgetSaver.save(appWidgetId)
         }
     }
 
     override fun onReceive(context: Context, intent: Intent?) {
-
         super.onReceive(context, intent)
 
-        if (intent != null) {
-            val appWidget = intent.getIntExtra("id", 0)
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val appWidget = intent?.getIntExtra(INCREASE_ID_KEY, DEFAULT_WIDGET_ID) ?: return
 
-            val increasePendingIntent: PendingIntent =
-                getPendingIntent(
-                    context,
-                    getIntent(context, ACTION_BROADCAST_INCREASE, appWidget),
-                    appWidget
-                )
+        val increasePendingIntent: PendingIntent = context.getPendingIntent(
+            ACTION_BROADCAST_INCREASE,
+            appWidget
+        )
 
-            val colorPendingIntent: PendingIntent =
-                getPendingIntent(
-                    context,
-                    getIntent(context, ACTION_BROADCAST_COLOR_CHANGE, appWidget),
-                    appWidget
-                )
+        val colorPendingIntent: PendingIntent = context.getPendingIntent(
+            ACTION_BROADCAST_COLOR_CHANGE,
+            appWidget
+        )
 
-            val views: RemoteViews =
-                getRemoteViews(context, increasePendingIntent, colorPendingIntent)
+        val views: RemoteViews = context.getRemoteViews(increasePendingIntent, colorPendingIntent)
 
-            when (intent.action) {
-                ACTION_BROADCAST_INCREASE -> {
-                    counter++
-                    views.setTextViewText(R.id.widgetText, counter.toString())
-                    saveWidgetId(appWidget)
-                    val appWidgetManager = AppWidgetManager.getInstance(context)
-                    onUpdate(context, appWidgetManager, list.toIntArray())
-                }
-                ACTION_BROADCAST_COLOR_CHANGE -> {
-                    val rnd = Random()
-                    val color: Int =
-                        Color.argb(180, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))
-                    views.setInt(
-                        R.id.widget, "setBackgroundColor",
-                        color
-                    )
-                    val appWidgetManager = AppWidgetManager.getInstance(context)
-                    appWidgetManager.updateAppWidget(appWidget, views)
-                }
-            }
-        }
+        handleIntentAction(intent, views, appWidget, context, appWidgetManager)
     }
 
-    private fun saveWidgetId(widgetId: Int) {
-        if (!list.contains(widgetId)) {
-            list.add(widgetId)
+    private fun updateAppWidget(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int
+    ) {
+        val increasePendingIntent: PendingIntent = context.getPendingIntent(
+            ACTION_BROADCAST_INCREASE,
+            appWidgetId
+        )
+
+        val colorPendingIntent: PendingIntent = context.getPendingIntent(
+            ACTION_BROADCAST_COLOR_CHANGE,
+            appWidgetId
+        )
+
+        val views: RemoteViews = context.getRemoteViews(increasePendingIntent, colorPendingIntent)
+
+        views.setTextViewText(R.id.widgetText, counter.toString())
+
+        appWidgetManager.updateAppWidget(appWidgetId, views)
+    }
+
+    private fun Context.getPendingIntent(
+        action: String,
+        appWidgetId: Int
+    ): PendingIntent {
+        val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE
+        else PendingIntent.FLAG_UPDATE_CURRENT
+
+        val intent = getIntent(this, action, appWidgetId)
+
+        return PendingIntent.getBroadcast(this, appWidgetId, intent, flag)
+    }
+
+    private fun getIntent(context: Context, action: String, appWidgetId: Int): Intent =
+        Intent(context, this::class.java).apply {
+            this.action = action
+            putExtra(INCREASE_ID_KEY, appWidgetId)
+        }
+
+    private fun Context.getRemoteViews(
+        IncreasePendingIntent: PendingIntent,
+        ColorPendingIntent: PendingIntent
+    ): RemoteViews = RemoteViews(
+        this.packageName,
+        R.layout.widget
+    ).apply {
+        setOnClickPendingIntent(R.id.widgetIncreaseButton, IncreasePendingIntent)
+        setOnClickPendingIntent(R.id.widgetBackgroundButton, ColorPendingIntent)
+    }
+
+    private fun handleIntentAction(
+        intent: Intent,
+        views: RemoteViews,
+        appWidget: Int,
+        context: Context,
+        appWidgetManager: AppWidgetManager
+    ) {
+        when (intent.action) {
+            ACTION_BROADCAST_INCREASE -> {
+                counter++
+                views.setTextViewText(R.id.widgetText, counter.toString())
+                WidgetSaver.save(appWidget)
+                onUpdate(context, appWidgetManager, WidgetSaver.widgets.toIntArray())
+            }
+            ACTION_BROADCAST_COLOR_CHANGE -> {
+                val randomColor = colorRandomizer.getColor()
+                views.setInt(
+                    R.id.widget, "setBackgroundColor",
+                    randomColor
+                )
+                appWidgetManager.updateAppWidget(appWidget, views)
+            }
         }
     }
 }
