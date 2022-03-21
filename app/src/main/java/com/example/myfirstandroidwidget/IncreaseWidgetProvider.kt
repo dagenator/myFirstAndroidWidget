@@ -12,6 +12,7 @@ class IncreaseWidgetProvider : AppWidgetProvider() {
 
     companion object Counter {
         private var counter = 0
+        private var list:MutableList<Int> = mutableListOf()
     }
 
     private val ACTION_BROADCAST_INCREASE = "ACTION_BROADCAST_INCREASE"
@@ -19,21 +20,19 @@ class IncreaseWidgetProvider : AppWidgetProvider() {
     private fun getIntent(context: Context, action: String, appWidgetId: Int): Intent {
         val intent = Intent(context, IncreaseWidgetProvider::class.java)
         intent.action = action
-        intent.putExtra("id", appWidgetId)
-        return intent
+        return intent.putExtra("id", appWidgetId)
     }
 
     private fun getRemoteViews(
         context: Context, pendingIntent: PendingIntent
     ): RemoteViews {
 
-        val views: RemoteViews = RemoteViews(
+        return RemoteViews(
             context.packageName,
             R.layout.widget
         ).apply {
             setOnClickPendingIntent(R.id.widgetButton, pendingIntent)
         }
-        return views
     }
 
     private fun getPendingIntent(
@@ -41,15 +40,12 @@ class IncreaseWidgetProvider : AppWidgetProvider() {
         intent: Intent,
         appWidgetId: Int
     ): PendingIntent {
-        val pendingIntent: PendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.getBroadcast(
-                context, appWidgetId, intent,
-                PendingIntent.FLAG_IMMUTABLE
-            )
+        val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_IMMUTABLE
         } else {
-            TODO("VERSION.SDK_INT < M")
+            PendingIntent.FLAG_UPDATE_CURRENT
         }
-        return pendingIntent
+        return PendingIntent.getBroadcast(context, appWidgetId, intent, flag)
     }
 
 
@@ -69,10 +65,9 @@ class IncreaseWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        println(counter.toString())
-
         appWidgetIds.forEach { appWidgetId ->
             updateAppWidget(context, appWidgetManager, appWidgetId)
+            saveWidgetId(appWidgetId)
         }
     }
 
@@ -89,11 +84,17 @@ class IncreaseWidgetProvider : AppWidgetProvider() {
                     val pendingIntent: PendingIntent = getPendingIntent(context, intent, appWidget)
                     val views: RemoteViews = getRemoteViews(context, pendingIntent)
                     views.setTextViewText(R.id.widgetText, counter.toString())
-
+                    saveWidgetId(appWidget)
                     val appWidgetManager = AppWidgetManager.getInstance(context)
-                    appWidgetManager.updateAppWidget(appWidget, views)
+                    appWidgetManager.updateAppWidget(list.toIntArray(), views)
                 }
             }
+        }
+    }
+
+    fun saveWidgetId(widgetId: Int){
+        if(!list.contains(widgetId)){
+            list.add(widgetId)
         }
     }
 }
